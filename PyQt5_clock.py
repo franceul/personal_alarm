@@ -111,17 +111,24 @@ class DigitalClock(QWidget):
 
     def set_alarm_buttonfunc(self):
         alarm_time = self.set_alarm_lineedit.text().strip()    #       By AI start
+        time_obj = QTime.fromString(alarm_time, "hh:mm AP")
 
-        # Simple validation: Ensure field isn't empty and alarm is unique    
-        if alarm_time and alarm_time not in self.alarms:
-            self.alarms.append(alarm_time)
-            
-            # Rebuild the full text display from the updated list
-            full_alarm_text = "\n".join(self.alarms)
-            self.alarms_label.setText(full_alarm_text)
-            
-            # Optional: Clear the input box after adding the alarm 
-            self.set_alarm_lineedit.clear()        #                    By AI  end
+        # Simple validation: Ensure field isn't empty and alarm is unique
+        if time_obj.isValid():
+            alarm_time = time_obj.toString("hh:mm AP")  # Standardize format
+            if alarm_time and alarm_time not in self.alarms:
+                # if self.alarms_label.text() ==
+                self.alarms.append(alarm_time)
+                full_alarm_text = "\n".join(self.alarms)            # Rebuild the full text display from the updated list
+                self.alarms_label.setText(full_alarm_text)
+                self.set_alarm_lineedit.clear()            # Optional: Clear the input box after adding the alarm
+            else:
+                self.set_alarm_lineedit.clear()
+                self.set_alarm_lineedit.setPlaceholderText("You already set that alarm")  # Feedback for duplicate alarm
+        else:
+            self.set_alarm_lineedit.clear()
+            self.set_alarm_lineedit.setPlaceholderText("Enter a valid time (hh:mm AP)")                    #                    By AI  end
+
 
     def alarm_functionality(self):
         time_now = QTime.currentTime().toString("hh:mm AP")
