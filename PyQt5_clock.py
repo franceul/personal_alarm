@@ -1,30 +1,28 @@
 import sys
-import subprocess
+import os
+import time
+import pygame
+import threading
 from PyQt5.QtWidgets import QWidget, QApplication, QLabel, QVBoxLayout, QPushButton, QRadioButton, QLineEdit, QHBoxLayout
 from PyQt5.QtCore import QTimer, QTime, Qt
 from PyQt5.QtGui import QFont, QFontDatabase
-import time
-import threading
 #------------------------Imports------------------------
-
 
 class DigitalClock(QWidget):
     def __init__(self):
         super().__init__()
-        self.time_label = QLabel("--:--:-- --", self) #If this gets deleted, changes have been undone.
+        self.time_label = QLabel("12:00:00", self)
         self.alarms_label = QLabel("No alarms", self)
         self.alarms_label.hide()
-        self.stop_alarm_button = QPushButton("Stop alarm", self)
-        self.stop_alarm_button.hide()
         self.alarms_button = QPushButton("Alarms", self)
+        self.alarm_istriggered = None
 
         self.set_alarm_lineedit = QLineEdit(self)
         self.set_alarm_lineedit.hide()
         self.set_alarm_button = QPushButton("Set alarm")
         self.set_alarm_button.hide()
         self.alarms = []
-        self.clock_timer = QTimer(self)
-        self.alarm_timer = QTimer(self)
+        self.timer = QTimer(self)
         self.initUI()
 
     def initUI(self):
@@ -51,7 +49,6 @@ class DigitalClock(QWidget):
         vbox.addLayout(hbox)
         vbox.addWidget(self.alarms_button)
         vbox.addWidget(self.time_label)
-        vbox.addWidget(self.stop_alarm_button)
         self.setLayout(vbox)
 
     def styles(self):
@@ -97,13 +94,9 @@ class DigitalClock(QWidget):
         self.time_label.setFont(self.my_font)
 
     def clock_functionality(self):
-        self.clock_timer.timeout.connect(self.thread1.start())
-        self.clock_timer.start(1000)
-        self.thread1 = threading.Thread(target=self.update_time, )
-        self.thread2 = threading.Thread(target=self.alarm_functionality, )
-        self.thread1.start()
-        self.thread2.start()
-        #here
+        self.timer.timeout.connect(self.update_time)
+        self.timer.start(1000)
+        self.update_time()
 
     def open_alarms(self):
         if self.opened == False and self.alarms_button.clicked:
@@ -141,23 +134,27 @@ class DigitalClock(QWidget):
 
 
     def alarm_functionality(self):
-        alarm_time = self.current_time[0:5] + self.current_time[-3:]
-        print("Checking alarm:", alarm_time)  # Debug print to verify the alarm time being checked
-        if alarm_time in self.alarms:
-            subprocess.run(['spd-say', 'Wake up'])
-            self.stop_alarm_button.show()
-            self.stop_alarm_button.clicked.connect(self.stop_alarm)
+        time_now = QTime.currentTime().toString("hh:mm AP")
+        if time_now in self.alarms and time_now != self.alarm_istriggered:
+            thread1 = threading.Thread(target=self.play_alarm_sound, daemon=True)
+            thread1.start()
+            self.alarm_istriggered = time_now
+        elif time_now not in self.alarms:
+            self.alarm_istriggered = None  # Reset the alarm trigger if the current time is not in the alarms list       
     
-    def stop_alarm(self):
-        self.clock_seconds = QTime.currentTime().second()
-        subprocess.run(['pkill', 'spd-say " Wake up"'])
-        self.stop_alarm_button.hide()
-        time.sleep(60 - int(self.clock_seconds))  # Prevents the alarm from immediately going off again if the user stops it within the same minute
+    def play_alarm_sound(self):
+        pygame.mixer.init()
+        pygame.mixer.music.load("games/gud/The Fog - Trey Xavier, Rod Kim.mp3")
+        pygame.mixer.music.play()
+        while pygame.mixer.music.get_busy():
+            time.sleep(0.1)
 
     def update_time(self):
-        self.current_time = QTime.currentTime().toString("hh:mm:ss AP")
-        self.time_label.setText(self.current_time)
+        current_time = QTime.currentTime().toString("hh:mm:ss AP")
+        self.time_label.setText(current_time)
+        self.alarm_functionality()
         
+
 
 
 if __name__ == '__main__':
