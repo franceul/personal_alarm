@@ -17,6 +17,11 @@ class DigitalClock(QWidget):
         self.alarms_button = QPushButton("Alarms", self)
         self.alarm_istriggered = None
         self.stop_alarm_button = QPushButton("Stop alarm", self)
+        self.am_radio_button = QRadioButton("AM", self)
+        self.pm_radio_button = QRadioButton("PM", self)
+        self.am_radio_button.setChecked(True)
+        self.am_radio_button.hide()
+        self.pm_radio_button.hide()
         self.stop_alarm_button.hide()
 
         self.set_alarm_lineedit = QLineEdit(self)
@@ -30,13 +35,15 @@ class DigitalClock(QWidget):
     def initUI(self):
         self.setWindowTitle("Digital Clock")
         self.setGeometry(700, 400, 300, 100)
-        self.set_alarm_lineedit.setPlaceholderText("hh:mm AM/PM")
+        self.set_alarm_lineedit.setPlaceholderText("hh:mm")
         self.time_label.setObjectName("time_label")
         self.alarms_button.setObjectName("alarms_button")
         self.set_alarm_button.setObjectName("set_alarm_button")
         self.alarms_button.clicked.connect(self.open_alarms)
         self.set_alarm_button.clicked.connect(self.set_alarm_buttonfunc)
         self.stop_alarm_button.setObjectName("stop_alarm_button")
+        self.am_radio_button.setObjectName("am_radio_button")
+        self.pm_radio_button.setObjectName("pm_radio_button")
 
         self.opened = False
         self.layouts()
@@ -48,6 +55,8 @@ class DigitalClock(QWidget):
         hbox = QHBoxLayout()
         vbox.addWidget(self.alarms_label)
         hbox.addWidget(self.set_alarm_lineedit)
+        hbox.addWidget(self.am_radio_button)
+        hbox.addWidget(self.pm_radio_button)
         hbox.addWidget(self.set_alarm_button)
         vbox.addLayout(hbox)
         vbox.addWidget(self.alarms_button)
@@ -92,10 +101,27 @@ class DigitalClock(QWidget):
                            
                             QLineEdit{
                                 border: 3px solid;
-                                font-size: 30px;
+                                font-size: 20px;
                                 font-weight: bold;
                                 border-radius: 7px;
-                                padding: 5px 10px;
+                                padding: 15px 10px;
+                            }
+                           
+                            QRadioButton {
+                                font-size: 20px;
+                                font-weight: bold;
+                                spacing: 10px;
+                            }
+
+                            QRadioButton:indicator{
+                                width: 18px;
+                                height: 18px;
+                                border: 2px solid #444;
+                                border-radius: 9px;
+                            }
+
+                            QRadioButton:indicator:checked{
+                                background-color: #444;
                             }
                             
                         """)
@@ -115,35 +141,47 @@ class DigitalClock(QWidget):
             self.alarms_label.show()
             self.set_alarm_button.show()
             self.set_alarm_lineedit.show()
+            self.am_radio_button.show()
+            self.pm_radio_button.show()
             self.alarms_button.setText("Hide alarms")
             self.opened = True
         elif self.opened == True and self.alarms_button.clicked:
             self.alarms_label.hide()
             self.set_alarm_button.hide()
             self.set_alarm_lineedit.hide()
+            self.am_radio_button.hide()
+            self.pm_radio_button.hide()
             self.alarms_button.setText("Alarms")
             self.opened = False
 
     def set_alarm_buttonfunc(self):
-        alarm_time = self.set_alarm_lineedit.text().strip()    #       By AI start
+        alarm_text = self.set_alarm_lineedit.text().strip()
+        # if not alarm_text:     #does not work if the user only enters spaces, so we strip the text first and then check if it's empty
+        #     self.set_alarm_lineedit.setPlaceholderText("Enter a time like 07:30")
+        #     return
+        if self.am_radio_button.isChecked():
+            ampm = "AM"
+        elif self.pm_radio_button.isChecked():
+            ampm = "PM"
+        else:
+            self.set_alarm_lineedit.setPlaceholderText("Choose AM or PM")
+            return
+
+        alarm_time = f"{alarm_text} {ampm}"
         time_obj = QTime.fromString(alarm_time, "hh:mm AP")
 
-        # Simple validation: Ensure field isn't empty and alarm is unique
         if time_obj.isValid():
-            alarm_time = time_obj.toString("hh:mm AP")  # Standardize format
-            if alarm_time and alarm_time not in self.alarms:
-                # if self.alarms_label.text() ==
+            alarm_time = time_obj.toString("hh:mm AP")
+            if alarm_time not in self.alarms:
                 self.alarms.append(alarm_time)
-                full_alarm_text = "\n".join(self.alarms)            # Rebuild the full text display from the updated list
-                self.alarms_label.setText(full_alarm_text)
-                self.set_alarm_lineedit.clear()            # Optional: Clear the input box after adding the alarm
+                self.alarms_label.setText("\n".join(self.alarms))
+                self.set_alarm_lineedit.clear()
             else:
                 self.set_alarm_lineedit.clear()
-                self.set_alarm_lineedit.setPlaceholderText("You already set that alarm")  # Feedback for duplicate alarm
+                self.set_alarm_lineedit.setPlaceholderText("You already set that alarm")
         else:
             self.set_alarm_lineedit.clear()
-            self.set_alarm_lineedit.setPlaceholderText("Enter a valid time (hh:mm AP)")                    #                    By AI  end
-
+            self.set_alarm_lineedit.setPlaceholderText("Enter a valid time (hh:mm)")
 
     def alarm_functionality(self):
         time_now = QTime.currentTime().toString("hh:mm AP")
