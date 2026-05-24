@@ -195,7 +195,9 @@ class DigitalClock(QWidget):
             self.alarm_istriggered = None  # Reset the alarm trigger if the current time is not in the alarms list       
             self.stop_alarm_button.hide()
 
+
     def play_alarm_sound(self):
+        print ("play alarm sounds")
         pygame.mixer.init()
         pygame.mixer.music.load("games/gud/The Fog - Trey Xavier, Rod Kim.mp3")
         pygame.mixer.music.play()
